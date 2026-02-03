@@ -3,273 +3,244 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sentiment Analyzer – English Movie Reviews</title>
+  <title>ÉLITE Sentiment • Exclusive English Analysis</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --gold: #d4af37;
-      --gold-dark: #b8972e;
-      --success: #10b981;
-      --danger: #ef4444;
-      --dark: #0f172a;
-      --light: #f8fafc;
-      --gray: #6b7280;
+      --bg: #0a0a0a;
+      --text: #e0e0e0;
+      --gold: #c9a96e;
+      --gold-dark: #a67c52;
+      --gray: #444;
+      --border: #1f1f1f;
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: linear-gradient(to bottom, #0f172a, #1e293b);
-      color: var(--light);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      background-image: 
-        url('https://images.unsplash.com/photo-1611678224939-0a197a0e1e1f?auto=format&fit=crop&q=80&w=2000') /* Red carpet vibe – byt gärna ut om du hittar bättre fri bild */;
-      background-size: cover;
-      background-position: center 30%;
-      background-attachment: fixed;
-      position: relative;
-    }
-
-    body::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.78); /* mörk overlay för läsbarhet */
-      z-index: -1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 2rem;
+      line-height: 1.6;
     }
 
     .container {
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 20px;
-      border: 1px solid rgba(212, 175, 55, 0.18);
-      box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-      padding: 3rem 2rem;
-      margin: 2rem auto;
-      max-width: 620px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 2.2rem;
+      width: 100%;
+      max-width: 680px;
+      padding: 4rem 3rem;
+      border: 1px solid var(--border);
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-radius: 2px; /* mycket subtil rundning */
       position: relative;
+      overflow: hidden;
     }
 
-    .oscar-statue {
-      width: 110px;
-      height: auto;
-      margin: 0 auto 1.2rem;
-      filter: drop-shadow(0 8px 25px rgba(212,175,55,0.5));
-      animation: float 6s ease-in-out infinite;
+    .container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(201,169,110,0.04) 0%, transparent 60%);
+      pointer-events: none;
     }
 
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50%     { transform: translateY(-12px); }
+    header {
+      text-align: center;
+      margin-bottom: 5rem;
     }
 
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 3.1rem;
-      font-weight: 900;
+    .brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.6rem;
+      font-weight: 400;
+      letter-spacing: 0.35em;
       color: var(--gold);
-      text-shadow: 0 3px 12px rgba(212,175,55,0.4);
-      margin-bottom: 0.4rem;
-      transition: all 0.4s;
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
     }
 
-    h1:hover {
-      transform: scale(1.03);
-      text-shadow: 0 6px 20px rgba(212,175,55,0.6);
+    .tagline {
+      font-size: 1.05rem;
+      color: #777;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
     }
 
-    .subtitle {
-      color: #cbd5e1;
-      font-size: 1.15rem;
-      margin-bottom: 1.8rem;
+    . exclusivity {
+      font-size: 0.9rem;
+      color: #555;
+      font-style: italic;
+      margin-top: 1.2rem;
     }
 
     .warning {
-      background: rgba(239,68,68,0.18);
-      border: 1px solid rgba(239,68,68,0.4);
-      color: #fecaca;
-      padding: 1.1rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
       text-align: center;
-      font-weight: 500;
+      color: #888;
+      font-size: 0.95rem;
+      margin: 3rem 0 4rem;
+      padding: 1.2rem 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
 
     textarea {
       width: 100%;
       height: 160px;
-      padding: 1.2rem;
-      border: 2px solid rgba(99,102,241,0.3);
-      border-radius: 14px;
-      background: rgba(30,41,59,0.6);
-      color: white;
-      font-size: 1.15rem;
+      background: #111;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 1.5rem;
+      font-size: 1.1rem;
       resize: vertical;
-      transition: all 0.3s;
+      border-radius: 2px;
+      transition: all 0.4s ease;
+      margin-bottom: 2.5rem;
     }
 
     textarea:focus {
       outline: none;
       border-color: var(--gold);
-      box-shadow: 0 0 0 5px rgba(212,175,55,0.25);
-      background: rgba(30,41,59,0.85);
+      box-shadow: 0 0 0 1px rgba(201,169,110,0.15);
+      background: #151515;
     }
 
     .btn {
       width: 100%;
-      padding: 1.25rem;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--dark);
-      background: linear-gradient(90deg, var(--gold), #facc15);
-      border: none;
-      border-radius: 14px;
+      padding: 1.3rem;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 1.05rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: all 0.3s;
-      margin: 1.5rem 0 2rem;
-      box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+      transition: all 0.4s ease;
+      border-radius: 2px;
+      font-weight: 500;
     }
 
     .btn:hover:not(:disabled) {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 12px 30px rgba(212,175,55,0.55);
+      background: var(--gold);
+      color: #0a0a0a;
+      letter-spacing: 0.18em;
     }
 
     .btn:disabled {
-      background: #475569;
-      color: #94a3b8;
+      border-color: #333;
+      color: #555;
       cursor: not-allowed;
-      box-shadow: none;
     }
 
     #result {
-      padding: 1.8rem;
-      border-radius: 14px;
-      background: rgba(30,41,59,0.7);
-      border: 2px solid rgba(99,102,241,0.3);
+      margin: 3.5rem 0 2rem;
+      padding: 2.5rem 2rem;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 2px;
       font-size: 1.6rem;
-      font-weight: 700;
+      font-weight: 400;
       text-align: center;
-      min-height: 100px;
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.5s;
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
+      transition: all 0.6s ease;
+      font-family: 'Cormorant Garamond', serif;
+      letter-spacing: 0.05em;
     }
 
-    #result.positive { 
-      border-color: var(--success); 
-      color: #a7f3d0; 
-      background: rgba(16,185,129,0.15);
+    #result.positive {
+      color: var(--gold);
+      border-color: var(--gold);
+      background: rgba(201,169,110,0.04);
     }
-    #result.negative { 
-      border-color: var(--danger); 
-      color: #fecaca; 
-      background: rgba(239,68,68,0.15);
+
+    #result.negative {
+      color: #b0b0b0;
+      border-color: #444;
     }
 
     #debug-box {
-      margin-top: 2.5rem;
-      background: rgba(15,23,42,0.5);
-      border-radius: 12px;
-      padding: 1.3rem;
-      font-family: 'Consolas', monospace;
-      font-size: 0.92rem;
-      color: #cbd5e1;
-      max-height: 200px;
+      margin-top: 5rem;
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #666;
+      max-height: 160px;
       overflow-y: auto;
-      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 2px;
     }
 
-    .log-entry { margin: 0.4rem 0; line-height: 1.45; }
-    .log-error   { color: #f87171; }
-    .log-success { color: #34d399; }
+    .log-entry {
+      margin: 0.5rem 0;
+    }
 
-    .footer {
+    .log-error { color: #aa5555; }
+    .log-success { color: #88aa88; }
+
+    .footer-note {
       text-align: center;
-      margin-top: 3rem;
-      color: #94a3b8;
-      font-size: 0.95rem;
-    }
-
-    .imdb-logo {
-      height: 38px;
-      margin-top: 1rem;
-      opacity: 0.75;
-      transition: opacity 0.3s;
-    }
-
-    .imdb-logo:hover { opacity: 1; }
-
-    @media (max-width: 500px) {
-      .container { padding: 2rem 1.2rem; margin: 1rem; }
-      h1 { font-size: 2.4rem; }
+      color: #444;
+      font-size: 0.8rem;
+      margin-top: 5rem;
+      letter-spacing: 0.1em;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <img 
-      src="https://images.unsplash.com/photo-1741887864007-271499b10d53?auto=format&fit=crop&q=80&w=800" 
-      alt="Golden Oscar Statuette" 
-      class="oscar-statue"
-    >
-    <h1>Sentiment Analyzer</h1>
-    <div class="subtitle">English text – movie reviews & comments vibe check</div>
-  </div>
+  <header>
+    <div class="brand">ÉLITE</div>
+    <div class="tagline">Sentiment Intelligence</div>
+    <div class="exclusivity">Limited English Analysis Model</div>
+  </header>
 
   <div class="warning">
-    ⚠️ Modellen fungerar <strong>bäst på engelska</strong> (t.ex. filmrecensioner, tweets, kommentarer).<br>
-    Svenska eller andra språk → ofta opålitliga resultat.
+    This proprietary model is finely tuned exclusively for English-language input.<br>
+    Other languages will yield unreliable results.
   </div>
 
   <textarea 
     id="textInput" 
-    placeholder="Type here (English only is best) – e.g. This movie is absolutely brilliant!"
+    placeholder="Enter English sentence only..."
   ></textarea>
 
   <button id="predictBtn" class="btn" disabled>
-    ⏳ Loading the red carpet model...
+    INITIALIZING EXCLUSIVE MODEL...
   </button>
 
-  <div id="result">Your sentiment result will shine here...</div>
+  <div id="result">Analysis will appear here</div>
 
   <div id="debug-box">
-    <div class="log-entry"><strong>Debug log — lights, camera, analysis...</strong></div>
+    <div class="log-entry">System initialized — awaiting input</div>
   </div>
 
-  <div class="footer">
-    <p>Made for English sentiment analysis – Oscars edition</p>
-    <a href="https://www.imdb.com" target="_blank">
-      <img 
-        src="https://www.stickpng.com/assets/images/580b57fcd9996e24bc43c529.png" 
-        alt="IMDb Logo" 
-        class="imdb-logo"
-      >
-    </a>
+  <div class="footer-note">
+    A curated experience • English only • Precision engineered
   </div>
 </div>
 
 <script>
-// Samma JS-kod som tidigare – jag ändrade bara lite text för att matcha temat
+// ────────────────────────────────────────────────
 const SEQUENCE_LENGTH = 256;
 let model, metadata;
 
@@ -278,7 +249,7 @@ function log(msg, type = 'info') {
   const entry = document.createElement('div');
   entry.className = 'log-entry';
   const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  entry.innerHTML = `<span style="color:#94a3b8">[${time}]</span> ${msg}`;
+  entry.innerHTML = `<span style="color:#555">[${time}]</span> ${msg}`;
   if (type === 'error') entry.classList.add('log-error');
   if (type === 'success') entry.classList.add('log-success');
   box.appendChild(entry);
@@ -287,25 +258,25 @@ function log(msg, type = 'info') {
 
 async function loadAssets() {
   try {
-    log("Curtain up – loading metadata...");
+    log("Loading proprietary weights...");
     const meta = await fetch('tfjs_model/metadata.json').then(r => {
-      if (!r.ok) throw new Error(`metadata.json → ${r.status}`);
+      if (!r.ok) throw new Error(`metadata not found (${r.status})`);
       return r.json();
     });
     metadata = meta;
-    log("Metadata loaded ✓", 'success');
+    log("Metadata authenticated", 'success');
 
-    log("Loading the star model...");
+    log("Loading elite model layers...");
     model = await tf.loadLayersModel('tfjs_model/model.json');
-    log("Model ready for its close-up ✓", 'success');
+    log("Model fully loaded — exclusive access granted", 'success');
 
     tf.tidy(() => model.predict(tf.zeros([1, SEQUENCE_LENGTH])));
 
     const btn = document.getElementById('predictBtn');
     btn.disabled = false;
-    btn.textContent = "Analyze Sentiment";
+    btn.textContent = "ANALYZE";
   } catch (err) {
-    log("ERROR: " + err.message, 'error');
+    log("CRITICAL: " + err.message, 'error');
   }
 }
 
@@ -333,8 +304,8 @@ async function runPrediction() {
   const resultDiv = document.getElementById('result');
 
   btn.disabled = true;
-  btn.textContent = "Analyzing...";
-  resultDiv.textContent = "Spotlight on...";
+  btn.textContent = "PROCESSING...";
+  resultDiv.textContent = "Analyzing...";
   resultDiv.className = "";
 
   try {
@@ -347,23 +318,23 @@ async function runPrediction() {
     const percent = (score * 100).toFixed(1);
     
     if (score > 0.5) {
-      resultDiv.textContent = `Positive Sentiment (${percent}%) 🌟`;
+      resultDiv.textContent = `POSITIVE (${percent}%)`;
       resultDiv.className = 'positive';
     } else {
-      resultDiv.textContent = `Negative / Neutral (${percent}%) 🎬`;
+      resultDiv.textContent = `NEGATIVE / NEUTRAL (${percent}%)`;
       resultDiv.className = 'negative';
     }
 
-    log(`"${text}" → ${percent}% (${score > 0.5 ? 'positive' : 'negative/neutral'})`, 'success');
+    log(`Input processed → ${percent}%`, 'success');
 
     tensor.dispose();
     pred.dispose();
   } catch (e) {
-    log("Prediction failed: " + e.message, 'error');
-    resultDiv.textContent = "Cut! Something went wrong...";
+    log("Analysis error: " + e.message, 'error');
+    resultDiv.textContent = "Error during exclusive processing";
   } finally {
     btn.disabled = false;
-    btn.textContent = "Analyze Sentiment";
+    btn.textContent = "ANALYZE";
   }
 }
 
