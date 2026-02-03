@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sentiment Analyzer – English Only</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --success: #10b981;
+      --danger: #ef4444;
+      --gray: #6b7280;
+      --light: #f8fafc;
+      --dark: #0f172a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      color: var(--dark);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 580px;
+      border: 1px solid rgba(99,102,241,0.12);
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 0.8rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: var(--gray);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .warning {
+      background: #fef3f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.8rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      resize: vertical;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+      background: white;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 1.1rem;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: white;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.25s;
+      margin: 1.2rem 0 1.5rem;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+    }
+
+    .btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #result {
+      padding: 1.5rem;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      text-align: center;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s;
+    }
+
+    #result.positive { 
+      background: #ecfdf5; 
+      border-color: #a7f3d0; 
+      color: #065f46; 
+    }
+    #result.negative { 
+      background: #fef2f2; 
+      border-color: #fecaca; 
+      color: #991b1b; 
+    }
+
+    #debug-box {
+      margin-top: 2.5rem;
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 1.2rem;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #334155;
+      max-height: 180px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+    }
+
+    .log-entry {
+      margin: 0.35rem 0;
+      line-height: 1.4;
+    }
+
+    .log-error { color: #e11d48; font-weight: 500; }
+    .log-success { color: #059669; font-weight: 500; }
+
+    .small-note {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Sentiment Analyzer</h1>
+  <div class="subtitle">
+    Detects positive or negative sentiment in English text
+  </div>
+
+  <div class="warning">
+    ⚠️ Denna modell fungerar <strong>endast bra på engelska meningar</strong>.<br>
+    Svenska, danska, spanska etc. ger oftast felaktiga eller slumpmässiga resultat.
+  </div>
+
+  <textarea 
+    id="textInput" 
+    placeholder="Type an English sentence here... (e.g. The movie was fantastic!)"
+  ></textarea>
+
+  <button id="predictBtn" class="btn" disabled>
+    ⏳ Loading model...
+  </button>
+
+  <div id="result">Result will appear here...</div>
+
+  <div id="debug-box">
+    <div class="log-entry"><strong>Debug log started...</strong></div>
+  </div>
+
+  <div class="small-note">
+    Powered by TensorFlow.js • Model expects exactly 256 tokens
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+const SEQUENCE_LENGTH = 256;
+let model, metadata;
+
+function log(msg, type = 'info') {
+  const box = document.getElementById('debug-box');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  entry.innerHTML = `<span style="color:#94a3b8">[${time}]</span> ${msg}`;
+  
+  if (type === 'error') entry.classList.add('log-error');
+  if (type === 'success') entry.classList.add('log-success');
+  
+  box.appendChild(entry);
+  box.scrollTop = box.scrollHeight;
+  console.log(`[${type}] ${msg}`);
+}
+
+async function loadAssets() {
+  try {
+    log("Loading metadata...");
+    const meta = await fetch('tfjs_model/metadata.json').then(r => {
+      if (!r.ok) throw new Error(`metadata.json → ${r.status}`);
+      return r.json();
+    });
+    metadata = meta;
+    log("Metadata loaded ✓", 'success');
+
+    log("Loading model...");
+    model = await tf.loadLayersModel('tfjs_model/model.json');
+    log("Model loaded successfully ✓", 'success');
+
+    // Warm-up
+    tf.tidy(() => model.predict(tf.zeros([1, SEQUENCE_LENGTH])));
+
+    const btn = document.getElementById('predictBtn');
+    btn.disabled = false;
+    btn.textContent = "Analyze Sentiment";
+  } catch (err) {
+    log("ERROR: " + err.message, 'error');
+  }
+}
+
+function tokenize(text) {
+  const words = text.toLowerCase()
+    .replace(/[.,!?;:()'"“”‘’]/g, '')
+    .split(/\s+/)
+    .filter(w => w);
+
+  const wordIndex = metadata.word_index || {};
+  const seq = words.map(w => wordIndex[w] || 1); // 1 = OOV
+
+  const padded = new Array(SEQUENCE_LENGTH).fill(0);
+  for (let i = 0; i < Math.min(seq.length, SEQUENCE_LENGTH); i++) {
+    padded[i] = seq[i];
+  }
+  return padded;
+}
+
+async function runPrediction() {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('predictBtn');
+  const resultDiv = document.getElementById('result');
+
+  btn.disabled = true;
+  btn.textContent = "Analyzing...";
+  resultDiv.textContent = "Thinking...";
+  resultDiv.className = "";
+
+  try {
+    const indices = tokenize(text);
+    const tensor = tf.tensor2d([indices], [1, SEQUENCE_LENGTH]);
+    
+    const pred = model.predict(tensor);
+    const score = (await pred.data())[0];
+    
+    const percent = (score * 100).toFixed(1);
+    
+    if (score > 0.5) {
+      resultDiv.textContent = `Positive (${percent}%) 👍`;
+      resultDiv.className = 'positive';
+    } else {
+      resultDiv.textContent = `Negative / Neutral (${percent}%) 👎`;
+      resultDiv.className = 'negative';
+    }
+
+    log(`"${text}"  →  ${percent}% (${score > 0.5 ? 'positive' : 'negative/neutral'})`, 'success');
+
+    tensor.dispose();
+    pred.dispose();
+  } catch (e) {
+    log("Prediction failed: " + e.message, 'error');
+    resultDiv.textContent = "Something went wrong...";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Analyze Sentiment";
+  }
+}
+
+// Init
+loadAssets();
+document.getElementById('predictBtn').onclick = runPrediction;
+</script>
+</body>
+</html>
